@@ -9,22 +9,24 @@ def dynamic_programming_scheduler(data=None):
 
     n = len(data)
 
-    # Calculate total testing time for every subset
     total_time = [0] * (1 << n)
 
     for mask in range(1, 1 << n):
         bit = mask & -mask
         i = bit.bit_length() - 1
-        total_time[mask] = total_time[mask ^ bit] + data[i]["time"]
 
-    # DP table: minimum cost for each subset
+        total_time[mask] = (
+            total_time[mask ^ bit] + data[i]["time"]
+        )
+
     INF = float("inf")
+
     dp = [INF] * (1 << n)
     parent = [-1] * (1 << n)
 
     dp[0] = 0
 
-    # Find the best order
+    # Minimize the sum of completion times
     for mask in range(1 << n):
 
         if dp[mask] == INF:
@@ -36,16 +38,13 @@ def dynamic_programming_scheduler(data=None):
 
                 new_mask = mask | (1 << i)
 
-                new_cost = (
-                    dp[mask]
-                    + data[i]["weight"] * total_time[new_mask]
-                )
+                new_cost = dp[mask] + total_time[new_mask]
 
                 if new_cost < dp[new_mask]:
                     dp[new_mask] = new_cost
                     parent[new_mask] = i
 
-    # Reconstruct the best schedule
+    # Reconstruct the schedule
     mask = (1 << n) - 1
     schedule = []
 
@@ -56,14 +55,12 @@ def dynamic_programming_scheduler(data=None):
 
     schedule.reverse()
 
-    # Calculate completion times
-    current_time = 0
+    completion_time = 0
     details = []
 
     for sample in schedule:
-        current_time += sample["time"]
 
-        cost = current_time * sample["weight"]
+        completion_time += sample["time"]
 
         details.append({
             "id": sample["id"],
@@ -71,31 +68,33 @@ def dynamic_programming_scheduler(data=None):
             "urgency": sample["urgency"],
             "time": sample["time"],
             "weight": sample["weight"],
-            "completion_time": current_time,
-            "cost": cost
+            "completion_time": completion_time,
+            "cost": sample["weight"] * completion_time
         })
 
+    weighted_cost = sum(item["cost"] for item in details)
+
     result = {
-        "algorithm": "Dynamic Programming",
+        "algorithm": "Dynamic Programming (Minimum Completion Time)",
         "schedule": details,
-        "total_cost": dp[(1 << n) - 1],
+        "total_cost": weighted_cost,
+        "objective_value": dp[(1 << n) - 1],
+        "objective": "Minimize the sum of completion times",
         "time_complexity": "O(n * 2^n)",
         "space_complexity": "O(2^n)"
     }
 
-    print("\n===== DYNAMIC PROGRAMMING SCHEDULER =====")
+    print("\n===== DYNAMIC PROGRAMMING =====")
 
     for item in details:
         print(
             item["id"],
-            item["test"],
-            "| Completion:",
-            item["completion_time"],
-            "| Cost:",
-            item["cost"]
+            "| Completion:", item["completion_time"],
+            "| Weighted Cost:", item["cost"]
         )
 
-    print("\nMinimum Total Weighted Cost:", result["total_cost"])
+    print("Minimum Sum of Completion Times:", dp[(1 << n) - 1])
+    print("Weighted Cost for Comparison:", weighted_cost)
 
     return result
 

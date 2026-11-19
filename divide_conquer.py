@@ -2,23 +2,15 @@
 from sample_data import samples
 
 
-def compare_samples(a, b):
-    # Compare priority/time ratios without decimals
-    left = a["weight"] * b["time"]
-    right = b["weight"] * a["time"]
-
-    return left >= right
-
-
 def merge(left, right):
-    result = []
 
+    result = []
     i = 0
     j = 0
 
     while i < len(left) and j < len(right):
 
-        if compare_samples(left[i], right[j]):
+        if left[i]["time"] >= right[j]["time"]:
             result.append(left[i])
             i += 1
         else:
@@ -49,7 +41,6 @@ def divide_conquer_scheduler(data=None):
     if data is None:
         data = samples
 
-    # Divide and conquer using Merge Sort
     sorted_samples = merge_sort(data.copy())
 
     completion_time = 0
@@ -72,23 +63,24 @@ def divide_conquer_scheduler(data=None):
     total_cost = sum(item["cost"] for item in details)
 
     result = {
-        "algorithm": "Divide and Conquer",
+        "algorithm": "Divide and Conquer (Longest Time First)",
         "schedule": details,
         "total_cost": total_cost,
+        "objective": "Schedule longest testing times first",
         "time_complexity": "O(n log n)",
         "space_complexity": "O(n)"
     }
 
-    print("\n===== DIVIDE AND CONQUER SCHEDULER =====")
+    print("\n===== DIVIDE AND CONQUER =====")
 
     for item in details:
         print(
-            item["id"], item["test"],
+            item["id"],
             "| Completion:", item["completion_time"],
             "| Cost:", item["cost"]
         )
 
-    print("\nMinimum Weighted Completion Cost:", total_cost)
+    print("Total Weighted Completion Cost:", total_cost)
 
     return result
 

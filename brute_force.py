@@ -8,11 +8,11 @@ def brute_force_scheduler(data=None):
     if data is None:
         data = samples
 
-    best_order = None
-    minimum_cost = float("inf")
+    worst_order = None
+    maximum_cost = float("-inf")
     total_orders = 0
 
-    # Check every possible testing order
+    # Check every possible arrangement
     for order in permutations(data):
 
         total_orders += 1
@@ -23,15 +23,14 @@ def brute_force_scheduler(data=None):
             completion_time += sample["time"]
             total_cost += sample["weight"] * completion_time
 
-        if total_cost < minimum_cost:
-            minimum_cost = total_cost
-            best_order = order
+        if total_cost > maximum_cost:
+            maximum_cost = total_cost
+            worst_order = order
 
-    # Prepare result
     completion_time = 0
     details = []
 
-    for sample in best_order:
+    for sample in worst_order:
         completion_time += sample["time"]
 
         details.append({
@@ -45,25 +44,26 @@ def brute_force_scheduler(data=None):
         })
 
     result = {
-        "algorithm": "Brute Force",
+        "algorithm": "Brute Force (Maximum Cost)",
         "schedule": details,
-        "total_cost": minimum_cost,
+        "total_cost": maximum_cost,
         "total_orders": total_orders,
+        "objective": "Find the highest weighted completion cost",
         "time_complexity": "O(n! * n)",
         "space_complexity": "O(n)"
     }
 
-    print("\n===== BRUTE FORCE SCHEDULER =====")
+    print("\n===== BRUTE FORCE =====")
     print("Total possible orders:", total_orders)
 
     for item in details:
         print(
-            item["id"], item["test"],
+            item["id"],
             "| Completion:", item["completion_time"],
             "| Cost:", item["cost"]
         )
 
-    print("\nMinimum Weighted Completion Cost:", minimum_cost)
+    print("Maximum Weighted Completion Cost:", maximum_cost)
 
     return result
 
