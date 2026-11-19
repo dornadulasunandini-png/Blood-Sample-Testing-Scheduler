@@ -1,103 +1,82 @@
 
-from sample_data import samples
+def dynamic_programming_schedule(samples):
 
+    n = len(samples)
 
-def dynamic_programming_scheduler(data=None):
+    total_states = 1 << n
 
-    if data is None:
-        data = samples
-
-    n = len(data)
-
-    total_time = [0] * (1 << n)
-
-    for mask in range(1, 1 << n):
-        bit = mask & -mask
-        i = bit.bit_length() - 1
-
-        total_time[mask] = (
-            total_time[mask ^ bit] + data[i]["time"]
-        )
-
-    INF = float("inf")
-
-    dp = [INF] * (1 << n)
-    parent = [-1] * (1 << n)
+    dp = [float("inf")] * total_states
+    parent = [None] * total_states
 
     dp[0] = 0
 
-    # Minimize the sum of completion times
-    for mask in range(1 << n):
+    # Dynamic Programming
 
-        if dp[mask] == INF:
-            continue
+    for mask in range(total_states):
 
-        for i in range(n):
+        elapsed_time = sum(
+            samples[i]["time"]
+            for i in range(n)
+            if mask & (1 << i)
+        )
 
-            if not (mask & (1 << i)):
+        for j in range(n):
 
-                new_mask = mask | (1 << i)
+            if not (mask & (1 << j)):
 
-                new_cost = dp[mask] + total_time[new_mask]
+                new_mask = mask | (1 << j)
+
+                new_cost = (
+                    dp[mask]
+                    + elapsed_time
+                    + samples[j]["time"]
+                )
 
                 if new_cost < dp[new_mask]:
-                    dp[new_mask] = new_cost
-                    parent[new_mask] = i
 
-    # Reconstruct the schedule
-    mask = (1 << n) - 1
-    schedule = []
+                    dp[new_mask] = new_cost
+                    parent[new_mask] = (mask, j)
+
+    # Reconstruct schedule
+
+    mask = total_states - 1
+    best_order = []
 
     while mask:
-        i = parent[mask]
-        schedule.append(data[i])
-        mask ^= (1 << i)
 
-    schedule.reverse()
+        previous_mask, sample_index = parent[mask]
+
+        best_order.append(samples[sample_index])
+
+        mask = previous_mask
+
+    best_order.reverse()
+
+    # Calculate weighted cost
 
     completion_time = 0
-    details = []
+    weighted_total = 0
 
-    for sample in schedule:
+    schedule = []
+
+    for sample in best_order:
 
         completion_time += sample["time"]
 
-        details.append({
-            "id": sample["id"],
-            "test": sample["test"],
-            "urgency": sample["urgency"],
-            "time": sample["time"],
-            "weight": sample["weight"],
+        cost = sample["weight"] * completion_time
+
+        weighted_total += cost
+
+        schedule.append({
+            **sample,
             "completion_time": completion_time,
-            "cost": sample["weight"] * completion_time
+            "weighted_cost": cost
         })
 
-    weighted_cost = sum(item["cost"] for item in details)
-
-    result = {
-        "algorithm": "Dynamic Programming (Minimum Completion Time)",
-        "schedule": details,
-        "total_cost": weighted_cost,
-        "objective_value": dp[(1 << n) - 1],
-        "objective": "Minimize the sum of completion times",
-        "time_complexity": "O(n * 2^n)",
+    return {
+        "schedule": schedule,
+        "total_cost": weighted_total,
+        "objective_value": dp[total_states - 1],
+        "time_complexity": "O(n × 2^n)",
         "space_complexity": "O(2^n)"
     }
-
-    print("\n===== DYNAMIC PROGRAMMING =====")
-
-    for item in details:
-        print(
-            item["id"],
-            "| Completion:", item["completion_time"],
-            "| Weighted Cost:", item["cost"]
-        )
-
-    print("Minimum Sum of Completion Times:", dp[(1 << n) - 1])
-    print("Weighted Cost for Comparison:", weighted_cost)
-
-    return result
-
-
-if __name__ == "__main__":
-    dynamic_programming_scheduler()
