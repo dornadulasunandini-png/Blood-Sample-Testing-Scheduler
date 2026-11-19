@@ -1,179 +1,125 @@
-
 import streamlit as st
 import pandas as pd
 
 from sample_data import samples
-from brute_force import brute_force_scheduler
-from divide_conquer import divide_conquer_scheduler
-from dynamic_programming import dynamic_programming_scheduler
-from greedy import greedy_scheduler
 
+from brute_force import brute_force_schedule
+from divide_conquer import divide_conquer_schedule
+from dynamic_programming import dynamic_programming_schedule
+from greedy import greedy_schedule
+
+
+# PAGE CONFIGURATION
 
 st.set_page_config(
     page_title="Blood Sample Testing Scheduler",
-    page_icon="🧪",
+    page_icon="🩸",
     layout="wide"
 )
 
-# Initialize sample data
-if "samples" not in st.session_state:
-    st.session_state.samples = [dict(s) for s in samples]
-
-
-# Header
-st.title("🧪 Smart Blood Sample Testing Scheduler")
+st.title("🩸 Smart Blood Sample Testing Scheduler")
 
 st.write(
-    "An algorithm-based system that demonstrates different "
-    "blood sample scheduling strategies."
+    "An algorithm-based system to schedule blood samples "
+    "using four different approaches."
 )
 
 st.info(
-    "This project compares four scheduling approaches "
-    "using different scheduling objectives."
+    "This project compares Brute Force, Divide and Conquer, "
+    "Dynamic Programming, and Greedy algorithms."
 )
 
 
-# Add sample section
-st.header("1. Add Blood Sample")
+# SAMPLE DETAILS
 
-with st.form("sample_form"):
+st.header("1. Blood Sample Details")
 
-    col1, col2, col3 = st.columns(3)
+if "samples" not in st.session_state:
 
-    with col1:
-        sample_id = st.text_input(
-            "Sample ID",
-            placeholder="S107"
-        )
-
-    with col2:
-        test_name = st.text_input(
-            "Test Name",
-            placeholder="Blood Test"
-        )
-
-    with col3:
-        urgency = st.selectbox(
-            "Urgency",
-            ["Emergency", "Urgent", "Normal"]
-        )
-
-    testing_time = st.number_input(
-        "Testing Time (minutes)",
-        min_value=1,
-        max_value=120,
-        value=3
-    )
-
-    submitted = st.form_submit_button("Add Sample")
-
-    if submitted:
-
-        if not sample_id.strip() or not test_name.strip():
-            st.error("Please enter both Sample ID and Test Name.")
-
-        elif any(
-            s["id"].lower() == sample_id.strip().lower()
-            for s in st.session_state.samples
-        ):
-            st.error("Sample ID already exists.")
-
-        elif len(st.session_state.samples) >= 8:
-            st.error("Maximum 8 samples allowed.")
-
-        else:
-
-            weights = {
-                "Emergency": 10,
-                "Urgent": 5,
-                "Normal": 1
-            }
-
-            st.session_state.samples.append({
-                "id": sample_id.strip(),
-                "test": test_name.strip(),
-                "urgency": urgency,
-                "time": int(testing_time),
-                "weight": weights[urgency]
-            })
-
-            # Remove old results after changing sample data
-            st.session_state.pop("results", None)
-
-            st.success("Blood sample added successfully!")
-            st.rerun()
-
-
-# Display samples
-st.header("2. Blood Sample Details")
-
-df = pd.DataFrame(st.session_state.samples)
-
-st.dataframe(
-    df,
-    use_container_width=True,
-    hide_index=True
-)
-
-col1, col2, col3 = st.columns(3)
-
-col1.metric("Total Samples", len(df))
-
-col2.metric(
-    "Total Testing Time",
-    f"{df['time'].sum()} min"
-)
-
-col3.metric(
-    "Emergency Samples",
-    len(df[df["urgency"] == "Emergency"])
-)
-
-
-# Algorithm descriptions
-explanations = {
-
-    "Brute Force": (
-        "Checks every possible sample arrangement and selects "
-        "the arrangement with the highest weighted completion cost. "
-        "It demonstrates the worst-case scheduling arrangement."
-    ),
-
-    "Divide and Conquer": (
-        "Divides the sample list into smaller groups, sorts them "
-        "using Merge Sort, and combines them by arranging the "
-        "longest testing time first."
-    ),
-
-    "Dynamic Programming": (
-        "Uses bitmasking and a DP table to store previous results. "
-        "It finds the schedule that minimizes the sum of completion "
-        "times without using urgency weights in the optimization."
-    ),
-
-    "Greedy": (
-        "Calculates urgency weight divided by testing time. "
-        "It arranges samples from the highest ratio to the lowest "
-        "ratio to minimize weighted completion cost."
-    )
-}
-
-
-# Run algorithms
-st.header("3. Algorithm Results")
+    st.session_state.samples = [s.copy() for s in samples]
 
 data = st.session_state.samples
 
-if st.button("Run All Four Algorithms", type="primary"):
+st.dataframe(
+    pd.DataFrame(data),
+    use_container_width=True
+)
 
-    with st.spinner("Running all four algorithms..."):
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.metric(
+        "Total Samples",
+        len(data)
+    )
+
+with col2:
+
+    st.metric(
+        "Total Testing Time",
+        sum(s["time"] for s in data),
+        "Minutes"
+    )
+
+
+# ALGORITHM DESCRIPTIONS
+
+st.header("2. Algorithm Approaches")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.subheader("Brute Force")
+
+    st.write(
+        "Checks all possible arrangements and finds "
+        "the maximum weighted completion cost."
+    )
+
+    st.subheader("Divide and Conquer")
+
+    st.write(
+        "Uses Merge Sort to arrange samples from "
+        "longest testing time to shortest testing time."
+    )
+
+with col2:
+
+    st.subheader("Dynamic Programming")
+
+    st.write(
+        "Uses bitmasking and a DP table to minimize "
+        "the sum of completion times."
+    )
+
+    st.subheader("Greedy")
+
+    st.write(
+        "Uses urgency weight divided by testing time "
+        "to arrange samples from highest ratio to lowest."
+    )
+
+
+# RUN ALGORITHMS
+
+st.header("3. Algorithm Results")
+
+if st.button("Run All Algorithms", type="primary"):
+
+    with st.spinner("Running all algorithms..."):
 
         results = {
-            "Brute Force": brute_force_scheduler(data),
-            "Divide and Conquer": divide_conquer_scheduler(data),
-            "Dynamic Programming": dynamic_programming_scheduler(data),
-            "Greedy": greedy_scheduler(data)
+
+            "Brute Force": brute_force_schedule(data),
+
+            "Divide and Conquer": divide_conquer_schedule(data),
+
+            "Dynamic Programming": dynamic_programming_schedule(data),
+
+            "Greedy": greedy_schedule(data)
+
         }
 
         st.session_state.results = results
@@ -181,173 +127,163 @@ if st.button("Run All Four Algorithms", type="primary"):
     st.success("All four algorithms completed successfully!")
 
 
-# Display results
+# DISPLAY RESULTS
+
 if "results" in st.session_state:
 
     results = st.session_state.results
 
-    tabs = st.tabs([
-        "Brute Force",
-        "Divide and Conquer",
-        "Dynamic Programming",
-        "Greedy"
-    ])
-
-    for tab, name in zip(tabs, results.keys()):
-
-        with tab:
-
-            result = results[name]
-
-            st.subheader(name)
-
-            st.write("**How it works:**")
-            st.write(explanations[name])
-
-            st.write("**Scheduling objective:**")
-            st.write(result.get("objective", "Scheduling comparison"))
-
-            c1, c2, c3 = st.columns(3)
-
-            c1.metric(
-                "Weighted Completion Cost",
-                result["total_cost"]
-            )
-
-            c2.metric(
-                "Time Complexity",
-                result["time_complexity"]
-            )
-
-            c3.metric(
-                "Space Complexity",
-                result["space_complexity"]
-            )
-
-            if name == "Dynamic Programming":
-                st.metric(
-                    "Minimum Sum of Completion Times",
-                    result["objective_value"]
-                )
-
-            st.write("**Testing Schedule:**")
-
-            schedule_df = pd.DataFrame(result["schedule"])
-
-            st.dataframe(
-                schedule_df,
-                use_container_width=True,
-                hide_index=True
-            )
-
-            order = " → ".join(
-                item["id"] for item in result["schedule"]
-            )
-
-            st.write("**Sample ID Order:**")
-            st.code(order)
-
-            if name == "Brute Force":
-
-                st.info(
-                    f"Total possible arrangements checked: "
-                    f"{result['total_orders']}"
-                )
-
-            st.write("**Algorithm steps:**")
-
-            if name == "Brute Force":
-
-                steps = [
-                    "Generate all possible sample arrangements.",
-                    "Calculate completion time for every sample.",
-                    "Calculate weighted completion cost.",
-                    "Compare all possible arrangements.",
-                    "Select the arrangement with maximum cost."
-                ]
-
-            elif name == "Divide and Conquer":
-
-                steps = [
-                    "Divide the sample list into two halves.",
-                    "Sort each half recursively.",
-                    "Compare testing times.",
-                    "Merge the halves in descending testing-time order.",
-                    "Calculate the weighted completion cost."
-                ]
-
-            elif name == "Dynamic Programming":
-
-                steps = [
-                    "Create a DP table for all sample subsets.",
-                    "Use bitmasking to represent selected samples.",
-                    "Calculate total processing time for each subset.",
-                    "Store the minimum sum of completion times.",
-                    "Reconstruct the final testing order."
-                ]
-
-            else:
-
-                steps = [
-                    "Calculate urgency weight divided by testing time.",
-                    "Sort samples by descending ratio.",
-                    "Select the highest-ratio sample first.",
-                    "Calculate completion times.",
-                    "Calculate total weighted completion cost."
-                ]
-
-            for i, step in enumerate(steps, 1):
-                st.write(f"{i}. {step}")
-
-
-    # Algorithm comparison
-    st.header("4. Algorithm Comparison")
-
-    comparison_rows = []
+    st.subheader("Individual Algorithm Outputs")
 
     for name, result in results.items():
 
-        order = " → ".join(
-            item["id"] for item in result["schedule"]
+        with st.expander(name, expanded=True):
+
+            st.write("**Scheduling Order:**")
+
+            order = result["schedule"]
+
+            order_text = " → ".join(
+                sample["id"] for sample in order
+            )
+
+            st.write(order_text)
+
+            if name == "Dynamic Programming":
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "Minimum Sum of Completion Times",
+                        result.get("objective_value", result.get("total_cost", 0))
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Weighted Completion Cost",
+                        result["total_cost"]
+                    )
+
+            else:
+
+                st.metric(
+                    "Weighted Completion Cost",
+                    result["total_cost"]
+                )
+
+            st.write(
+                "**Time Complexity:**",
+                result["time_complexity"]
+            )
+
+            st.write(
+                "**Space Complexity:**",
+                result["space_complexity"]
+            )
+
+            if name == "Brute Force":
+
+                st.write(
+                    "**Permutations Checked:**",
+                    result["permutations_checked"]
+                )
+
+            st.write("**Schedule Details:**")
+
+            schedule_table = []
+
+            for sample in order:
+
+                schedule_table.append({
+
+                    "Sample ID": sample["id"],
+
+                    "Test Name": sample["name"],
+
+                    "Urgency": sample["urgency"],
+
+                    "Testing Time": sample["time"],
+
+                    "Weight": sample["weight"],
+
+                    "Completion Time": sample["completion_time"],
+
+                    "Weighted Cost": sample["weighted_cost"]
+
+                })
+
+            st.dataframe(
+                pd.DataFrame(schedule_table),
+                use_container_width=True
+            )
+
+
+    # COMPARISON TABLE
+
+    st.header("4. Algorithm Comparison")
+
+    comparison = []
+
+    for name, result in results.items():
+
+        order_text = " → ".join(
+            sample["id"]
+            for sample in result["schedule"]
         )
 
-        comparison_rows.append({
+        comparison.append({
+
             "Algorithm": name,
-            "Scheduling Objective": result.get("objective", ""),
-            "Sample Order": order,
-            "Weighted Cost": result["total_cost"],
+
+            "Scheduling Order": order_text,
+
+            "Weighted Completion Cost": result["total_cost"],
+
             "Time Complexity": result["time_complexity"],
+
             "Space Complexity": result["space_complexity"]
+
         })
 
-    comparison = pd.DataFrame(comparison_rows)
+    comparison_df = pd.DataFrame(comparison)
 
     st.dataframe(
-        comparison,
-        use_container_width=True,
-        hide_index=True
+        comparison_df,
+        use_container_width=True
     )
 
-    st.subheader("Weighted Cost Comparison")
 
-    chart_data = comparison[
-        ["Algorithm", "Weighted Cost"]
+    # CHART
+
+    st.header("5. Cost Comparison Chart")
+
+    chart_df = comparison_df[
+        ["Algorithm", "Weighted Completion Cost"]
     ].set_index("Algorithm")
 
-    st.bar_chart(chart_data)
+    st.bar_chart(chart_df)
+
+
+    # EXPLANATION
 
     st.warning(
-        "The four algorithms use different scheduling objectives. "
-        "Their weighted costs are shown for comparison, but the "
-        "lowest cost is not a fair overall winner because the "
-        "algorithms are not optimizing the same objective."
+        "Important: These four approaches use different "
+        "scheduling objectives. Their weighted completion "
+        "costs are not a direct comparison of four algorithms "
+        "solving the same optimization problem."
     )
 
+    st.success("Scheduling comparison completed!")
 
-# Footer
+
+# FOOTER
+
 st.divider()
 
 st.caption(
     "Smart Blood Sample Testing Scheduler | "
-    "Academic Algorithm Explorer Project"
+    "Data Structures and Algorithms Project"
 )
